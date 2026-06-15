@@ -1,0 +1,12 @@
+pandas~=3.0.3
+kagglehub~=1.0.2
+python-dotenv~=1.2.2
+numpy~=2.4.6
+opencv-python
+# For GPU support, install using: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu132
+torch
+albumentations
+matplotlib
+torchvision
+scikit-learn
+torchmetrics
