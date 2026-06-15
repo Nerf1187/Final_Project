@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.idea/
+.junie/
+.idea/*.xml
+
+# Environment variables
+.env
+
+# Data
+data/
+
+# Model checkpoints
+models/
+
+# Generated visualization files
+*.png
+
+*.py
