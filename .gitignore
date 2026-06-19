@@ -33,3 +33,4 @@ models/
 *.png
 
 *.py
+!src/*.py
