@@ -27,7 +27,7 @@ def merge_csvs(files: list[str], output: str) -> None:
         return
     dfs = [pd.read_csv(f) for f in files]
     pd.concat(dfs).to_csv(output, index=False)
-    
+
 def download_dataset():
     # Get Kaggle credentials from .env
     load_dotenv()
@@ -87,8 +87,7 @@ def create_dataframes():
 
     
     return df, full_mammograms_df, roi_masks_df
-    
-    
+
 def pair_images(roi_masks_df, full_mammograms_df):
     # Extract the base patient ID from each dataframe
     roi_masks_df = roi_masks_df.copy()
@@ -127,6 +126,5 @@ def pair_images(roi_masks_df, full_mammograms_df):
     return paired_df, merged_df
 
 
-        
 if __name__ == "__main__":
     clear_checkpoints()
