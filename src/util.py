@@ -69,24 +69,34 @@ def download_dataset():
 
 def create_dataframes():
     # Full dataframe
-    df = pd.read_csv('../data/cbis-ddsm/csv/dicom_info.csv')
+    dicom_df = pd.read_csv('../data/cbis-ddsm/csv/dicom_info.csv')
+    mass_df = pd.read_csv('../data/cbis-ddsm/csv/mass_case_description_merged.csv')
+    
+    mass_df['uid'] = mass_df['image file path'].str.split('/').str[0] + '_' + mass_df['abnormality id'].astype(str)
+    mass_df['pathology'] = mass_df['pathology'].str.split('_').str[0] # Merge "BENIGN" and "BENIGN WITHOUT CALLBACK" into a single value
+    mass_df = mass_df[['uid', 'pathology']]
     
     # Change image path to relative path
-    df['image_path'] = df['image_path'].apply(lambda x: x.replace('CBIS-DDSM/', '../data/cbis-ddsm/'))
+    dicom_df['image_path'] = dicom_df['image_path'].apply(lambda x: x.replace('CBIS-DDSM/', '../data/cbis-ddsm/'))
     
     # Remove calcification images. Only focusing on masses for now
-    df = df[~df['PatientID'].str.contains('Calc')]
+    dicom_df = dicom_df[~dicom_df['PatientID'].str.contains('Calc')]
     
-    df.reset_index(inplace=True, drop=True)
+    dicom_df.reset_index(inplace=True, drop=True)
     
     # ROI mask dataframe
-    roi_masks_df = df[df['SeriesDescription'] == 'ROI mask images']
+    roi_masks_df = dicom_df[dicom_df['SeriesDescription'] == 'ROI mask images']
     
     # Full mammogram dataframe
-    full_mammograms_df = df[df['SeriesDescription'] == 'full mammogram images']
+    full_mammograms_df = dicom_df[dicom_df['SeriesDescription'] == 'full mammogram images']
 
+    cropped_df = dicom_df[dicom_df['SeriesDescription'] == 'cropped images']
+    cropped_df = pd.merge(cropped_df,
+                          mass_df,
+                          left_on='PatientID',
+                          right_on='uid')
     
-    return df, full_mammograms_df, roi_masks_df
+    return dicom_df, full_mammograms_df, roi_masks_df, cropped_df
 
 def pair_images(roi_masks_df, full_mammograms_df):
     # Extract the base patient ID from each dataframe
