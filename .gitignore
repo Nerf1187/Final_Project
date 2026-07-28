@@ -31,7 +31,12 @@ models/
 
 # Generated visualization files
 *.png
+*.jpg
 
 *.py
 !src/*.py
 TODO.*
+
+*.bat
+*.csl
+*.bib
