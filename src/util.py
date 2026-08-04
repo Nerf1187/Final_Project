@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import kagglehub
 import shutil
 from pathlib import Path
+import tkinter as tk
+from tkinter import filedialog
 
 def clear_checkpoints():
     path = "../models/Faster_RCNN/checkpoints/"
@@ -135,6 +137,42 @@ def pair_images(roi_masks_df, full_mammograms_df):
     
     return paired_df, merged_df
 
+def get_model_file_path(prompt: str, initial_directory: str, loop: bool = True) -> str | None:
+    """
+    Retrieve the file path of a selected model file using a graphical file dialog. Provides a simple prompt for
+    the user and allows for looping interaction until a file is selected or the process is exited.
+
+    :param prompt: Message to display to the user in the input prompt.
+    :type prompt: str
+    :param initial_directory: Initial directory to open in the file dialog.
+    :type initial_directory: str
+    :param loop: If set to True, the function will loop until the user provides valid input.
+        Defaults to True.
+    :type loop: bool
+    :return: The file path of the selected model file, an empty string if 'n' is chosen,
+        or None if the loop is ended without selection.
+    :rtype: str | None
+    """
+
+    run_once = False
+    while loop and not run_once:
+        run_once = True
+
+        check = input(prompt)
+
+        if check == 'y':
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+
+            return filedialog.askopenfilename(parent=root,
+                                              initialdir=initial_directory,
+                                              title="Select a file",
+                                              filetypes=(("Model Files", "*.pth"), ("All Files", "*.*"))
+                                              )
+        elif check == 'n':
+            return ''
+    return None
 
 if __name__ == "__main__":
     clear_checkpoints()
