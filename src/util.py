@@ -263,7 +263,7 @@ def get_model_file_path(prompt: str, initial_directory: str, loop: bool = True) 
     """
 
     run_once = False
-    while loop and not run_once:
+    while loop or not run_once:
         run_once = True
 
         check = input(prompt)
