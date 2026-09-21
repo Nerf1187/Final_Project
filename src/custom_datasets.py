@@ -172,7 +172,7 @@ class CBISDDSM_RCNN_Dataset(Dataset):
         plt.axis('off')
         plt.title("Sample Image and Bounding Box(es)" if not title else title)
         plt.show()
-        
+    
     def at_(self, idx):
         return self.df.iloc[idx]
 
@@ -181,7 +181,7 @@ class CBISDDSM_ResNet_Dataset(Dataset):
     def __init__(self, dataframe: pd.DataFrame, transform: A.Compose | None = None):
         self.df = dataframe
         self.transform = transform
-        
+    
     def __len__(self):
         return len(self.df)
     
@@ -196,10 +196,10 @@ class CBISDDSM_ResNet_Dataset(Dataset):
             img_tensor = transformed['image']
         else:
             img_tensor = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
-            
+        
         pathology = self.df.iloc[idx]['pathology']
-        label = 0 if pathology == 'BENIGN' else 1
-
+        label = 0 if pathology == 'BENIGN' else 1 # At this point, pathology is either 'BENIGN' or 'MALIGNANT'
+        
         return img_tensor, torch.tensor(label, dtype=torch.long)
     
     def visualize_sample(self, idx: int, title: str | None = None) -> None:
