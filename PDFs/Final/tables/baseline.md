@@ -37,4 +37,4 @@ graph TD
     end
 ```
 
-2hr 9min
+~3hr runtime for model 1 for complex training
