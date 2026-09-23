@@ -58,18 +58,21 @@ def get_cv_folds(dataframe: pd.DataFrame,
             overlap = set(train_df['patient']) & set(val_df['patient'])
             assert not overlap, (f"Patient leakage in fold {i + 1}: "
                                  f"{len(overlap)} patient(s) in both train and val.")
+            tr_counts = train_df['pathology'].value_counts().to_dict()
+            val_counts = val_df['pathology'].value_counts().to_dict()
+            tr_str = ", ".join([f"{k}: {v}" for k, v in tr_counts.items()])
+            val_str = ", ".join([f"{k}: {v}" for k, v in val_counts.items()])
             print(f"Fold {i + 1}: train {len(train_df):>5} rows / "
-                  f"{train_df['patient'].nunique():>4} patients "
-                  f"(malignant {(train_df['pathology'] == 'MALIGNANT').mean():.3f})  |  "
-                  f"val {len(val_df):>4} rows / {val_df['patient'].nunique():>4} patients "
-                  f"(malignant {(val_df['pathology'] == 'MALIGNANT').mean():.3f})")
+                  f"{train_df['patient'].nunique():>4} patients [{tr_str}]  |  "
+                  f"val {len(val_df):>4} rows / {val_df['patient'].nunique():>4} patients [{val_str}]")
         print(f"No patient is shared between train and val in any of the {len(folds)} folds.")
 
     return folds
 
 
 def train_fold(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs,
-               device, early_stopping_patience: int = 10, verbose: bool = True) -> tuple:
+               device, early_stopping_patience: int = 10, verbose: bool = True,
+               monitor: str = 'val_loss') -> tuple:
     """
     Train a model on one fold and restore the weights from its best validation epoch.
 
@@ -87,16 +90,22 @@ def train_fold(model, train_loader, val_loader, criterion, optimizer, scheduler,
     :param num_epochs: Maximum number of epochs to train for.
     :type num_epochs: int
     :param device: Device to train on.
-    :param early_stopping_patience: Stop after this many epochs without a validation-loss
+    :param early_stopping_patience: Stop after this many epochs without a monitored-metric
         improvement. Pass 0 to disable. Defaults to 10.
     :type early_stopping_patience: int
     :param verbose: If True, print per-batch and per-epoch progress. Defaults to True.
     :type verbose: bool
+    :param monitor: Metric used for checkpoint selection and early stopping.
+        ``'val_loss'`` (default, minimize) or ``'val_auc'`` (maximize).
+    :type monitor: str
     :return: A (model, history) tuple. ``history`` holds the full 'train_loss', 'val_loss' and
         'val_auc' curves plus the selected epoch and the loss *and* AUC measured at that same
         epoch, so the two reported numbers describe the one checkpoint that is kept.
     :rtype: tuple
     """
+
+    if monitor not in ('val_loss', 'val_auc'):
+        raise ValueError(f"monitor must be 'val_loss' or 'val_auc', got {monitor!r}")
 
     device = torch.device(device)
     device_type = device.type
@@ -107,7 +116,7 @@ def train_fold(model, train_loader, val_loader, criterion, optimizer, scheduler,
 
     best_val_loss = np.inf
     best_epoch = 0
-    best_epoch_auc = float('nan')
+    best_epoch_auc = float('-inf') if monitor == 'val_auc' else float('nan')
     best_model_weights = copy.deepcopy(model.state_dict())
     epochs_no_improve = 0
 
@@ -140,7 +149,21 @@ def train_fold(model, train_loader, val_loader, criterion, optimizer, scheduler,
 
         train_loss = epoch_loss / len(train_loader.dataset)
         val_labels, val_probs, val_loss = run_inference(model, val_loader, criterion, device)
-        val_auc = roc_auc_score(val_labels, val_probs)
+        try:
+            if val_probs.ndim == 2 and val_probs.shape[1] > 2:
+                val_auc = float(roc_auc_score(val_labels, val_probs, multi_class='ovr', average='macro',
+                                              labels=list(range(val_probs.shape[1]))))
+            elif val_probs.ndim == 2 and val_probs.shape[1] == 2:
+                val_auc = float(roc_auc_score(val_labels, val_probs[:, 1]))
+            else:
+                val_auc = float(roc_auc_score(val_labels, val_probs))
+        except Exception:
+            try:
+                val_auc = float(roc_auc_score(val_labels, val_probs, multi_class='ovr', average='macro'))
+            except Exception:
+                val_auc = float('nan')
+
+        # Always step the scheduler on val_loss (ReduceLROnPlateau expects a scalar to minimize).
         scheduler.step(val_loss)
 
         if verbose:
@@ -151,7 +174,12 @@ def train_fold(model, train_loader, val_loader, criterion, optimizer, scheduler,
         val_loss_history.append(val_loss)
         val_auc_history.append(val_auc)
 
-        if val_loss < best_val_loss:
+        if monitor == 'val_auc':
+            improved = (not np.isnan(val_auc)) and (val_auc > best_epoch_auc)
+        else:
+            improved = val_loss < best_val_loss
+
+        if improved:
             best_val_loss = val_loss
             # Record the AUC from this same epoch. Reporting max(val_auc_history) instead would
             # describe an epoch whose weights were thrown away.
@@ -176,8 +204,9 @@ def train_fold(model, train_loader, val_loader, criterion, optimizer, scheduler,
         'best_epoch': best_epoch,
         'best_val_loss': best_val_loss,
         'best_val_auc': best_epoch_auc,
-        'max_val_auc': max(val_auc_history),
+        'max_val_auc': max(val_auc_history) if len(val_auc_history) > 0 else float('nan'),
         'epochs_run': len(train_loss_history),
+        'monitor': monitor,
     }
     return model, history
 
@@ -195,14 +224,14 @@ def summarize_cv(histories: list[dict]) -> dict:
     losses = np.array([h['best_val_loss'] for h in histories])
     aucs = np.array([h['best_val_auc'] for h in histories])
 
-    print(f"\n{'Fold':<6}{'Best epoch':>12}{'Val loss':>12}{'Val AUC':>10}")
+    print(f"\n{'Fold':<6}{'Best epoch':>12}{'Val loss':>12}{'Val Macro AUC':>16}")
     for i, h in enumerate(histories):
         print(f"{i + 1:<6}{h['best_epoch'] + 1:>12}{h['best_val_loss']:>12.4f}"
-              f"{h['best_val_auc']:>10.4f}")
+              f"{h['best_val_auc']:>16.4f}")
 
-    print(f"\nVal loss: {losses.mean():.4f} +/- {losses.std():.4f}")
-    print(f"Val AUC : {aucs.mean():.4f} +/- {aucs.std():.4f}")
+    print(f"\nVal loss     : {losses.mean():.4f} +/- {losses.std():.4f}")
+    print(f"Val Macro AUC: {aucs.mean():.4f} +/- {aucs.std():.4f}")
 
-    return {'val_loss_mean': losses.mean(), 'val_loss_std': losses.std(),
-            'val_auc_mean': aucs.mean(), 'val_auc_std': aucs.std(),
+    return {'val_loss_mean': float(losses.mean()), 'val_loss_std': float(losses.std()),
+            'val_auc_mean': float(aucs.mean()), 'val_auc_std': float(aucs.std()),
             'fold_val_losses': losses.tolist(), 'fold_val_aucs': aucs.tolist()}

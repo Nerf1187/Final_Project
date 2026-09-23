@@ -1,3 +1,4 @@
+import os
 import albumentations as A
 import cv2
 import numpy as np
@@ -7,6 +8,14 @@ from matplotlib import patches
 # Visualization imports
 from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
+
+try:
+    from util import min_max_normalize
+except ImportError:
+    try:
+        from src.util import min_max_normalize
+    except ImportError:
+        from .util import min_max_normalize
 
 
 class CBISDDSM_RCNN_Dataset(Dataset):
@@ -178,9 +187,29 @@ class CBISDDSM_RCNN_Dataset(Dataset):
 
 
 class CBISDDSM_ResNet_Dataset(Dataset):
-    def __init__(self, dataframe: pd.DataFrame, transform: A.Compose | None = None):
+    LABEL_MAP = {
+        'BACKGROUND': 0,
+        'BENIGN': 1,
+        'MALIGNANT': 2
+    }
+
+    def __init__(self,
+                 dataframe: pd.DataFrame,
+                 transform: A.Compose | None = None,
+                 normalize_contrast: bool = False,
+                 cache: bool = True):
+        """
+        :param dataframe: Pandas DataFrame containing dataset metadata.
+        :param transform: Optional Albumentations Compose pipeline.
+        :param normalize_contrast: If True, applies min-max contrast normalization to scale pixel values
+            to the full [0, 255] range before applying transforms. Defaults to False.
+        :param cache: If True, caches loaded RGB image arrays in memory to avoid repeated disk reads.
+        """
         self.df = dataframe
         self.transform = transform
+        self.normalize_contrast = normalize_contrast
+        self.cache = cache
+        self._cached_images = {}
     
     def __len__(self):
         return len(self.df)
@@ -188,9 +217,31 @@ class CBISDDSM_ResNet_Dataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.df.iloc[idx]['image_path']
         
-        img = cv2.imread(img_path)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        
+        # Support running from either src/ or project root
+        if not os.path.exists(img_path):
+            if img_path.startswith('../'):
+                alt_path = img_path[3:]  # strip '../'
+                if os.path.exists(alt_path):
+                    img_path = alt_path
+            else:
+                alt_path = os.path.join('..', img_path)
+                if os.path.exists(alt_path):
+                    img_path = alt_path
+
+        if self.cache and img_path in self._cached_images:
+            img = self._cached_images[img_path]
+        else:
+            img = cv2.imread(img_path)
+            if img is None:
+                raise FileNotFoundError(f"Image could not be loaded at {img_path}")
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            
+            if self.normalize_contrast:
+                img = min_max_normalize(img)
+
+            if self.cache:
+                self._cached_images[img_path] = img
+
         if self.transform:
             transformed = self.transform(image=img)
             img_tensor = transformed['image']
@@ -198,7 +249,10 @@ class CBISDDSM_ResNet_Dataset(Dataset):
             img_tensor = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
         
         pathology = self.df.iloc[idx]['pathology']
-        label = 0 if pathology == 'BENIGN' else 1 # At this point, pathology is either 'BENIGN' or 'MALIGNANT'
+        if isinstance(pathology, str):
+            label = self.LABEL_MAP.get(pathology.upper(), self.LABEL_MAP.get(pathology, 0))
+        else:
+            label = int(pathology)
         
         return img_tensor, torch.tensor(label, dtype=torch.long)
     
