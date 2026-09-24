@@ -75,13 +75,22 @@ def download_dataset():
         merge_csvs(['../data/cbis-ddsm/csv/mass_case_description_test_set.csv',
                     '../data/cbis-ddsm/csv/mass_case_description_train_set.csv'],
                    '../data/cbis-ddsm/csv/mass_case_description_merged.csv')
+        
+        merge_csvs(['../data/cbis-ddsm/csv/calc_case_description_test_set.csv',
+                    '../data/cbis-ddsm/csv/calc_case_description_train_set.csv'],
+                   '../data/cbis-ddsm/csv/calc_case_description_merged.csv')
+        
+        merge_csvs(['../data/cbis-ddsm/csv/mass_case_description_merged.csv',
+                    '../data/cbis-ddsm/csv/calc_case_description_merged.csv',
+                    ],
+                   '../data/cbis-ddsm/csv/all_merged.csv')
     else:
         print("Target directory is not empty. Skipping data copy.")
 
 def create_dataframes():
     # Full dataframe
     dicom_df = pd.read_csv('../data/cbis-ddsm/csv/dicom_info.csv')
-    mass_df = pd.read_csv('../data/cbis-ddsm/csv/mass_case_description_merged.csv')
+    mass_df = pd.read_csv('../data/cbis-ddsm/csv/all_merged.csv')
     
     mass_df['uid'] = mass_df['image file path'].str.split('/').str[0] + '_' + mass_df['abnormality id'].astype(str)
     mass_df['pathology'] = mass_df['pathology'].str.split('_').str[0] # Merge "BENIGN" and "BENIGN WITHOUT CALLBACK" into a single value
@@ -91,7 +100,7 @@ def create_dataframes():
     dicom_df['image_path'] = dicom_df['image_path'].apply(lambda x: x.replace('CBIS-DDSM/', '../data/cbis-ddsm/'))
     
     # Remove calcification images. Only focusing on masses for now
-    dicom_df = dicom_df[~dicom_df['PatientID'].str.contains('Calc')]
+    # dicom_df = dicom_df[~dicom_df['PatientID'].str.contains('Calc')]
     
     dicom_df.reset_index(inplace=True, drop=True)
     
