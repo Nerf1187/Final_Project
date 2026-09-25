@@ -24,7 +24,7 @@ env/
 .env
 
 # Model checkpoints
-models/*/checkpoints/
+models/*/checkpoints/*.pth
 
 # Data
 data/
