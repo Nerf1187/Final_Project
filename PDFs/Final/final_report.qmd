@@ -22,6 +22,8 @@ crossref:
 
 # Total Word Count: 9,403
 
+# [Github](https://github.com/Nerf1187/Final_Project) Repo
+
 ---
 
 # 1 Introduction (WC: 884)
@@ -62,7 +64,7 @@ The primary aim of this project is to develop, train, and evaluate a robust deep
 
 ## 1.4 Project Template
 
-In accordance with the module requirements, this project follows the “CM3015 Machine Learning and Neural Networks - Deep Learning Breast Cancer Detection” template. The applied methodology demonstrates an end-to-end machine learning pipeline, from data wrangling to multi-model orchestration, fulfilling the core learning outcomes of the brief.
+In accordance with the module requirements, this project follows the "CM3015 Machine Learning and Neural Networks - Deep Learning Breast Cancer Detection" template. The applied methodology demonstrates an end-to-end machine learning pipeline, from data wrangling to multi-model orchestration, fulfilling the core learning outcomes of the brief.
 
 # 2 Literature Review (WC: 1,457)
 
@@ -147,7 +149,7 @@ Addressing these foundational gaps requires an end-to-end cascaded architecture 
 
 The objective of this project is to develop an automated computer vision pipeline capable of detecting and classifying breast cancer tumors in screening mammograms. By utilizing deep learning algorithms, the system acts as a reliable "second opinion" to assist radiologists in clinical diagnostics.
 
-Once again, in accordance with module guidelines, this project follows the “CM3015 Machine Learning and Neural Networks - Deep Learning Breast Cancer Detection” template.
+Once again, in accordance with module guidelines, this project follows the "CM3015 Machine Learning and Neural Networks - Deep Learning Breast Cancer Detection" template.
 
 ## 3.2 Clinical Domain and User Workflow Analysis
 
@@ -254,16 +256,6 @@ The complete integrated diagnostic pipeline comprises four modular stages illust
 
 4. **Stage 4: Diagnostic Output and Clinical Reporting:** Rejects background false alarms, pools case-level malignancy risks, generates annotated bounding-box visual overlays on the native scan, and exports structured clinical risk summaries for radiologist review.
 
-::: {#diag-architecture diag-pos="H"}
-
-```{mermaid}
-%%| file: ./diagrams/architecture.mmd
-%%| fig-height: 8
-```
-
-Four-Stage Cascaded Deep Learning Architecture for Mammographic Abnormality Detection and 3-Class Classification
-:::
-
 ## 3.5 Project Work Plan and Timeline
 
 To ensure the systematic execution of this two-stage hierarchical deep learning pipeline, a comprehensive work plan was developed. The project is structured into eight sequential, potentially overlapping, phases, tracking the progression from initial research to the final end-to-end system evaluation. Tables -@tbl-midterm_work and -@tbl-final_work show the estimated week-by-week timeline for the prototype and final products respectively. Note that weeks 11, 12, 21, and 22 are missing. These weeks are reserved for coursework from other modules.
@@ -291,6 +283,16 @@ To ensure the systematic execution of this two-stage hierarchical deep learning 
 
 **Phase 8: Final Report and Deliverables**
 - Consolidate final empirical benchmarks, clean repository code, and compile the comprehensive project report.
+
+::: {#diag-architecture diag-pos="H"}
+
+```{mermaid}
+%%| file: ./diagrams/architecture.mmd
+%%| fig-height: 8
+```
+
+Four-Stage Cascaded Deep Learning Architecture for Mammographic Abnormality Detection and 3-Class Classification
+:::
 
 | Phase |      W1      |      W2      |      W3      |      W4      |      W5      |      W6      |      W7      |      W8      |      W9      |     W10      |
 |:------|:------------:|:------------:|:------------:|:------------:|:------------:|:------------:|:------------:|:------------:|:------------:|:------------:|
@@ -693,6 +695,8 @@ Following cross-validation, the models were evaluated on the completely untouche
 
 - **Per-Class Diagnostic Breakdown:** @tbl-test-cm displays the confusion matrix and per-class performance on the held-out test cohort.
 
+{{< pagebreak >}}
+
 | Class            | Ground Truth Count | Correct Predictions | Sensitivity / Recall |   Precision    | F1-Score |
 |:-----------------|:------------------:|:-------------------:|:--------------------:|:--------------:|:--------:|
 | `BACKGROUND` (0) |         86         |         79          |  **91.9%** (79/86)   | 84.0% (79/94)  |   0.88   |
@@ -805,6 +809,8 @@ In a modular cascaded system, Model 2 is conditioned on the spatial accuracy of 
 
 : Spatial jitter sensitivity ablation evaluating diagnostic degradation under bounding box misalignment ($N = 303$ test mammograms). {#tbl-jitter-ablation}
 
+{{< pagebreak >}}
+
 **Analysis of Localization Sensitivity:**
 
 - **Specificity Collapse:** Under spatial jitter, the classifier suffers a severe collapse in specificity at the screening operating point ($\tau_{\text{cls}} = 0.40$), falling from $50.3\%$ (baseline) / $66.9\%$ (3-class) down to $14.6\%$, causing false positive case alarms to surge to 134 and diagnostic accuracy to plummet to $53.8\%$.
@@ -846,18 +852,18 @@ Consequently, the balanced anchor pyramid `((16, 32), (32, 64), (64, 128), (128,
 The joint multi-abnormality pipeline was evaluated across four distinct hyperparameter configurations governing candidate detection thresholds ($\tau_{\text{det}}$), Intersection-over-Union matching criteria ($\text{IoU}$), and classification decision thresholds ($\tau_{\text{cls}}$). @tbl-calc-cross-config presents a comparative summary of all four joint configurations alongside the mass-only baselines at the clinical screening operating point ($\tau_{\text{cls}} = 0.40$).
 
 | Configuration                             | **Mass-Only Baseline** | **Mass-Only + 3-Class (Config B)** | **Joint Mass+Calc (Config 1)** | **Joint Mass+Calc (Config 2)** | **Joint Mass+Calc (Config 3)** |
-| ----------------------------------------- | ---------------------- | ---------------------------------- | ------------------------------ | ------------------------------ | ------------------------------ |
+|-------------------------------------------|------------------------|------------------------------------|--------------------------------|--------------------------------|--------------------------------|
 | Detection Threshold ($\tau_{\text{det}}$) | 0.35                   | 0.50                               | 0.50                           | 0.30                           | 0.45                           |
-| Sensitivity                               | 76.0%                  | 77.4%                              | 78.9%                          | 83.0%                      | 81.6%                          |
+| Sensitivity                               | 76.0%                  | 77.4%                              | 78.9%                          | 83.0%                          | 81.6%                          |
 | Specificity                               | 50.3%                  | 66.9%                              | 59.8%                          | 45.9%                          | 55.1%                          |
 | Accuracy                                  | 62.7%                  | 71.9%                              | 64.9%                          | 55.8%                          | 62.2%                          |
 | PPV                                       | 58.7%                  | 68.5%                              | 41.7%                          | 35.9%                          | 39.9%                          |
 | NPV                                       | 69.3%                  | 76.1%                              | 88.6%                          | 88.1%                          | 89.2%                          |
 | False Negatives                           | 35                     | 33                                 | 31                             | 25                             | 27                             |
-| False Positives                           | 78                     | 52                             | 162                            | 218                            | 181                            |
-| Missed Lesions                            | 41                 | 56                             | 233                        | 187                        | 215                        |
-| Extra Detections                          | 299                | 186                            | 377                        | 577                        | 478                        |
-| FPPI                                      | 0.99               | 0.61                           | 0.69                       | 1.05                       | 0.87                       |
+| False Positives                           | 78                     | 52                                 | 162                            | 218                            | 181                            |
+| Missed Lesions                            | 41                     | 56                                 | 233                            | 187                            | 215                            |
+| Extra Detections                          | 299                    | 186                                | 377                            | 577                            | 478                            |
+| FPPI                                      | 0.99                   | 0.61                               | 0.69                           | 1.05                           | 0.87                           |
 : Cross-configuration performance comparison of joint mass and calcification detection against mass-only baselines ($\tau_{\text{cls}} = 0.40$). {#tbl-calc-cross-config}
 
 To examine the clinical trade-offs across decision thresholds, @tbl-calc-sweep details the full operating sweep for the primary joint configuration (Config 4: $\tau_{\text{det}} = 0.50, \text{IoU} = 0.60$).
