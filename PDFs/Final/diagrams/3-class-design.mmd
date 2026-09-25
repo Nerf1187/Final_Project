@@ -1,0 +1,12 @@
+graph TD
+    A["Stage 1 Proposal (Faster R-CNN)"] --> B[Candidate Patch]
+    B --> C["Stage 3 Verification (ResNet-50)"]
+
+    subgraph Potential Predictions
+        C --> D["`Class 0: Background
+        [Suppressed False Alarm]`"]
+        C --> E["`Class 1: BENIGN
+        [Benign Lesion Confirmed]`"]
+        C --> F["`Class 2: MALIGNANT
+        [Flagged Malignancy (&tau;_cls)]`"]
+    end
