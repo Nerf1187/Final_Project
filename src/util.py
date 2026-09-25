@@ -142,6 +142,8 @@ def pair_images(roi_masks_df, full_mammograms_df):
         'base_id': 'first'
     }).reset_index()
     
+    paired_df['PatientBaseID'] = paired_df['base_id'].str.extract(r'(P_[0-9]{5})')
+    
     print(f"Consolidated into {len(paired_df)} image entries.")
     
     return paired_df, merged_df
