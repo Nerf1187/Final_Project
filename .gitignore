@@ -23,11 +23,11 @@ env/
 # Environment variables
 .env
 
+# Model checkpoints
+models/*/checkpoints/
+
 # Data
 data/
-
-# Model checkpoints
-models/
 
 # Generated visualization files
 *.png
