@@ -1,4 +1,5 @@
 import os
+
 import albumentations as A
 import cv2
 import numpy as np
@@ -22,18 +23,18 @@ class CBISDDSM_RCNN_Dataset(Dataset):
     """
     Dataset class for managing CBIS-DDSM dataset configurations for object detection tasks.
 
-    This class acts as a PyTorch Dataset for the CBIS-DDSM dataset, which is a collection
-    of mammogram images annotated with region of interest (ROI) masks. The dataset is
-    designed for object detection models such as Faster R-CNN. Each sample consists of an
+    This class acts as a PyTorch Dataset for the CBIS-DDSM dataset. The dataset is
+    designed for object detection models. Each sample consists of an
     image and the corresponding bounding boxes (derived from ROI masks) along with labels.
 
-    The class supports image transformations using libraries such as Albumentations,
+    The class supports image transformations using libraries, such as Albumentations,
     and provides a method to visualize images along with the annotated bounding boxes.
 
     :ivar df: Pandas dataframe containing metadata about the dataset. Each row corresponds
-        to one mammogram image, and contains file paths to the image and associated
+        to one mammogram image and contains file paths to the image and associated
         ROI masks.
     :type df: pandas.DataFrame
+    
     :ivar transform: Transformation pipeline for preprocessing the images and their bounding
         boxes. If None, no transformations will be applied.
     :type transform: callable or None
@@ -54,6 +55,7 @@ class CBISDDSM_RCNN_Dataset(Dataset):
             as input and returns a transformed dataframe. Defaults to None.
         :type transform: callable or None, optional
         """
+        
         self.df = dataframe
         self.transform = transform
     
@@ -71,6 +73,7 @@ class CBISDDSM_RCNN_Dataset(Dataset):
 
         :param idx: Index of the image and corresponding ROIs in the dataset.
         :type idx: int
+        
         :return: A tuple containing the transformed tensor representation of the image and a
             target dictionary with bounding boxes, labels, and the image ID.
         :rtype: tuple[torch.Tensor, dict[str, torch.Tensor]]
@@ -142,6 +145,7 @@ class CBISDDSM_RCNN_Dataset(Dataset):
         :type idx: int
         :param title: Optional title for the plot. Defaults to None, using the default title.
         :type title: str | None
+        
         :return: None
         """
         
@@ -187,12 +191,39 @@ class CBISDDSM_RCNN_Dataset(Dataset):
 
 
 class CBISDDSM_ResNet_Dataset(Dataset):
+    """
+    Dataset class for managing CBIS-DDSM dataset configurations for object detection tasks.
+
+    This class acts as a PyTorch Dataset for the CBIS-DDSM dataset. The dataset is
+    designed for object classification models. Each sample consists of an
+    image and the corresponding bounding boxes (derived from ROI masks) along with labels.
+
+    The class supports image transformations using libraries, such as Albumentations,
+    and provides a method to visualize images along with the annotated bounding boxes.
+
+    :ivar LABEL_MAP: A dictionary mapping pathology labels ('BACKGROUND', 'BENIGN',
+        and 'MALIGNANT') to integer label values.
+    :type LABEL_MAP: dict
+    
+    :ivar df: The DataFrame containing dataset metadata including file paths and labels.
+    :type df: pd.DataFrame
+    
+    :ivar transform: An optional Albumentations Compose object for image transformations.
+    :type transform: A.Compose | None
+    
+    :ivar normalize_contrast: Determines if contrast normalization is applied to the image.
+    :type normalize_contrast: bool
+    
+    :ivar cache: Indicates whether images are cached in memory during dataset iterations.
+    :type cache: bool
+    """
+    
     LABEL_MAP = {
         'BACKGROUND': 0,
         'BENIGN': 1,
         'MALIGNANT': 2
     }
-
+    
     def __init__(self,
                  dataframe: pd.DataFrame,
                  transform: A.Compose | None = None,
@@ -200,11 +231,16 @@ class CBISDDSM_ResNet_Dataset(Dataset):
                  cache: bool = True):
         """
         :param dataframe: Pandas DataFrame containing dataset metadata.
+        :type dataframe: pd.DataFrame
         :param transform: Optional Albumentations Compose pipeline.
+        :type transform: A.Compose | None
         :param normalize_contrast: If True, applies min-max contrast normalization to scale pixel values
             to the full [0, 255] range before applying transforms. Defaults to False.
+        :type normalize_contrast: bool
         :param cache: If True, caches loaded RGB image arrays in memory to avoid repeated disk reads.
+        :type cache: bool
         """
+        
         self.df = dataframe
         self.transform = transform
         self.normalize_contrast = normalize_contrast
@@ -221,27 +257,31 @@ class CBISDDSM_ResNet_Dataset(Dataset):
         if not os.path.exists(img_path):
             if img_path.startswith('../'):
                 alt_path = img_path[3:]  # strip '../'
+                
                 if os.path.exists(alt_path):
                     img_path = alt_path
             else:
                 alt_path = os.path.join('..', img_path)
+                
                 if os.path.exists(alt_path):
                     img_path = alt_path
-
+        
         if self.cache and img_path in self._cached_images:
             img = self._cached_images[img_path]
         else:
             img = cv2.imread(img_path)
+            
             if img is None:
                 raise FileNotFoundError(f"Image could not be loaded at {img_path}")
+            
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             
             if self.normalize_contrast:
                 img = min_max_normalize(img)
-
+            
             if self.cache:
                 self._cached_images[img_path] = img
-
+        
         if self.transform:
             transformed = self.transform(image=img)
             img_tensor = transformed['image']
@@ -270,6 +310,7 @@ class CBISDDSM_ResNet_Dataset(Dataset):
         :type idx: int
         :param title: Optional title for the plot. Defaults to None, using the default title.
         :type title: str | None
+        
         :return: None
         """
         
