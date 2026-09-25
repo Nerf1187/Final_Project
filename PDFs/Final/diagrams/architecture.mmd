@@ -1,0 +1,36 @@
+---
+config:
+  themeVariables:
+    margin: 40
+  flowchart:
+    subGraphTitleMargin:
+      bottom: 25
+---
+
+graph TD
+    A[CBIS-DDSM Dataset / Input Mammogram] --> B[Dataset Ingestion & Patient-Grouped Split]
+    B --> C[Full Mammogram 1024x1024]
+
+    subgraph Stage 1: Abnormality Detection
+        C --> D[Faster R-CNN ResNet-50 FPN]
+        D --> E[Candidate Bounding Boxes & Scores]
+        E --> F{Score >= Detection Threshold?}
+    end
+
+    subgraph Stage 2: Dynamic ROI Extraction
+        F -- Yes --> G[Dynamic ROI Cropper]
+        G --> H[Resize 256x256 & Contrast Normalization]
+    end
+
+    subgraph Stage 3: 3-Class Malignancy Classification
+        H --> I[ResNet-50 Classifier: 5-Fold Ensemble]
+        I --> J{Classified Category}
+        J -- BACKGROUND --> K[False Alarm Suppressed / Normal Tissue]
+        J -- BENIGN / MALIGNANT --> L[Compute Case-Level Malignancy Probability]
+    end
+
+    subgraph Stage 4: Diagnostic Output & Clinical Reporting
+        F -- No Detections --> M[Negative / No Suspicious Abnormality]
+        K --> M
+        L --> N[Annotated Mammogram Overlay & Risk Score]
+    end
