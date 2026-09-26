@@ -29,10 +29,6 @@ models/*/checkpoints/*.pth
 # Data
 data/
 
-# Generated visualization files
-*.png
-*.jpg
-
 *.py
 !src/*.py
 TODO.*
