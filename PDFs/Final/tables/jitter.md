@@ -1,0 +1,7 @@
+|   Decision Threshold (τ) | Sensitivity (Recall)   | Specificity (TNR)   | Diagnostic Accuracy   | PPV (Precision)   | NPV   |   False Negatives (Missed) |   False Positives | Clinical Objective            |
+|-------------------------:|:-----------------------|:--------------------|:----------------------|:------------------|:------|---------------------------:|------------------:|:------------------------------|
+|                     0.35 | 97.9%                  | 6.4%                | 50.5%                 | 49.3%             | 76.9% |                          3 |               147 | High Sensitivity Screening    |
+|                      0.4 | 95.9%                  | 14.6%               | 53.8%                 | 51.1%             | 79.3% |                          6 |               134 | High Sensitivity Screening    |
+|                     0.45 | 82.2%                  | 34.4%               | 57.4%                 | 53.8%             | 67.5% |                         26 |               103 | Balanced Operating Point      |
+|                      0.5 | 58.2%                  | 58.0%               | 58.1%                 | 56.3%             | 59.9% |                         61 |                66 | High Specificity Confirmation |
+|                     0.55 | 40.4%                  | 80.3%               | 61.1%                 | 65.6%             | 59.2% |                         87 |                31 | High Specificity Confirmation |
